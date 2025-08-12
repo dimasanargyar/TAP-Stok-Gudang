@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, set, push, remove, onValue }
+  from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 // =========================
 // KONFIGURASI FIREBASE
@@ -52,23 +53,22 @@ btnSimpan.addEventListener("click", () => {
     return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
   }
 
-  // Simpan stok
+  console.log("📤 Mengirim data ke Firebase...");
   set(ref(db, `stok/${nama}`), sisaBaru)
     .then(() => {
-      console.log("✅ Stok berhasil disimpan:", nama, sisaBaru);
-
-      // Simpan riwayat
-      push(ref(db, "riwayat"), {
+      console.log(`✅ Stok untuk "${nama}" tersimpan: ${sisaBaru}`);
+      return push(ref(db, "riwayat"), {
         tanggal,
         nama,
         perubahan: jumlah,
         sisa: sisaBaru
       });
-      console.log("✅ Riwayat berhasil disimpan:", nama, jumlah);
-
+    })
+    .then(() => {
+      console.log("✅ Riwayat tersimpan");
       resetFormInputs();
     })
-    .catch(err => console.error("❌ Gagal menyimpan stok:", err));
+    .catch(err => console.error("❌ Gagal menyimpan data:", err));
 });
 
 // =========================
@@ -106,7 +106,6 @@ function renderStok() {
       const namaBarang = btn.getAttribute("data-hapus-barang");
       if (confirm(`Yakin ingin menghapus barang "${namaBarang}"?`)) {
         remove(ref(db, `stok/${namaBarang}`));
-        // Hapus semua riwayat barang ini
         onValue(ref(db, "riwayat"), snapshot => {
           snapshot.forEach(child => {
             if (child.val().nama === namaBarang) {
@@ -190,4 +189,3 @@ function escapeHtml(str) {
     '"': '&quot;', "'": '&#039;'
   })[m]);
 }
-
