@@ -53,9 +53,11 @@ btnSimpan.addEventListener("click", () => {
     return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
   }
 
-  // Simpan stok (overwrite jumlah terbaru)
+  // Simpan stok
   set(ref(db, `stok/${nama}`), sisaBaru)
     .then(() => {
+      console.log("✅ Stok berhasil disimpan:", nama, sisaBaru);
+
       // Simpan riwayat
       push(ref(db, "riwayat"), {
         tanggal,
@@ -63,9 +65,11 @@ btnSimpan.addEventListener("click", () => {
         perubahan: jumlah,
         sisa: sisaBaru
       });
+      console.log("✅ Riwayat berhasil disimpan:", nama, jumlah);
+
       resetFormInputs();
     })
-    .catch(err => console.error("Gagal menyimpan stok:", err));
+    .catch(err => console.error("❌ Gagal menyimpan stok:", err));
 });
 
 // =========================
@@ -83,6 +87,11 @@ function resetFormInputs() {
 // =========================
 function renderStok() {
   tabelStokBody.innerHTML = "";
+  if (!stokBarang || Object.keys(stokBarang).length === 0) {
+    tabelStokBody.innerHTML = `<tr><td colspan="3">Tidak ada stok</td></tr>`;
+    return;
+  }
+
   Object.keys(stokBarang).sort().forEach(nama => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -93,20 +102,20 @@ function renderStok() {
     tabelStokBody.appendChild(tr);
   });
 
-  // Event hapus stok
   document.querySelectorAll("[data-hapus-barang]").forEach(btn => {
     btn.addEventListener("click", () => {
       const namaBarang = btn.getAttribute("data-hapus-barang");
-      remove(ref(db, `stok/${namaBarang}`));
-
-      // Hapus riwayat barang tersebut
-      onValue(ref(db, "riwayat"), snapshot => {
-        snapshot.forEach(child => {
-          if (child.val().nama === namaBarang) {
-            remove(ref(db, `riwayat/${child.key}`));
-          }
-        });
-      }, { onlyOnce: true });
+      if (confirm(`Yakin ingin menghapus barang "${namaBarang}"?`)) {
+        remove(ref(db, `stok/${namaBarang}`));
+        // Hapus semua riwayat barang ini
+        onValue(ref(db, "riwayat"), snapshot => {
+          snapshot.forEach(child => {
+            if (child.val().nama === namaBarang) {
+              remove(ref(db, `riwayat/${child.key}`));
+            }
+          });
+        }, { onlyOnce: true });
+      }
     });
   });
 }
@@ -122,6 +131,11 @@ function renderRiwayat() {
   }
 
   tabelRiwayatBody.innerHTML = "";
+  if (data.length === 0) {
+    tabelRiwayatBody.innerHTML = `<tr><td colspan="6">Tidak ada riwayat</td></tr>`;
+    return;
+  }
+
   data.forEach((it, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -135,11 +149,12 @@ function renderRiwayat() {
     tabelRiwayatBody.appendChild(tr);
   });
 
-  // Event hapus riwayat
   document.querySelectorAll("#tabelRiwayat .smallBtn").forEach((btn, i) => {
     btn.addEventListener("click", () => {
       const entry = data[i];
-      remove(ref(db, `riwayat/${entry.id}`));
+      if (confirm(`Yakin ingin menghapus riwayat untuk "${entry.nama}"?`)) {
+        remove(ref(db, `riwayat/${entry.id}`));
+      }
     });
   });
 }
@@ -149,6 +164,7 @@ function renderRiwayat() {
 // =========================
 onValue(ref(db, "stok"), snapshot => {
   stokBarang = snapshot.val() || {};
+  console.log("📦 Data stok dari Firebase:", stokBarang);
   renderStok();
 });
 
@@ -159,6 +175,7 @@ onValue(ref(db, "riwayat"), snapshot => {
   });
   arr.sort((a,b) => (a.tanggal < b.tanggal ? 1 : -1));
   riwayat = arr;
+  console.log("📝 Data riwayat dari Firebase:", riwayat);
   renderRiwayat();
 });
 
