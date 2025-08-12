@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Stok Barang</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="card">
+    <h1>Monitoring Stok Barang (Online)</h1>
+
+    <div class="grid">
+      <div>
+        <label>Nama Barang</label>
+        <input type="text" id="inputNama" placeholder="Nama barang">
+      </div>
+      <div>
+        <label>Jumlah (+/-)</label>
+        <input type="number" id="inputJumlah" placeholder="Jumlah">
+      </div>
+      <div>
+        <label>Tanggal</label>
+        <input type="date" id="inputTanggal">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnSimpan">Simpan</button>
+      <button id="btnResetForm" class="smallBtn secondary">Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Daftar Stok</h2>
+    <table id="tabelStok">
+      <thead>
+        <tr>
+          <th>Nama Barang</th>
+          <th>Jumlah</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Riwayat Perubahan</h2>
+    <input type="text" id="searchBar" placeholder="Cari nama / tanggal">
+    <table id="tabelRiwayat">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Tanggal</th>
+          <th>Nama Barang</th>
+          <th>Perubahan</th>
+          <th>Sisa</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="script.js"></script>
+</body>
+</html>
