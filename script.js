@@ -1,9 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, set, push, remove, onValue }
+  from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 // =========================
-// MASUKKAN KONFIGURASI FIREBASE KAMU DI SINI
+// KONFIGURASI FIREBASE
 // =========================
 const firebaseConfig = {
   apiKey: "AIzaSyAXwrQEVJpDXSsWSF-QEcEtwzl08khw_YI",
@@ -16,20 +17,18 @@ const firebaseConfig = {
   measurementId: "G-VBDWX1E7H3"
 };
 
-// Init Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getDatabase(app);
 
 // =========================
-// ELEMENTS
+// ELEMENT DOM
 // =========================
 const inputNama = document.getElementById("inputNama");
 const inputJumlah = document.getElementById("inputJumlah");
 const inputTanggal = document.getElementById("inputTanggal");
 const btnSimpan = document.getElementById("btnSimpan");
 const btnResetForm = document.getElementById("btnResetForm");
-
 const searchBar = document.getElementById("searchBar");
 const tabelStokBody = document.querySelector("#tabelStok tbody");
 const tabelRiwayatBody = document.querySelector("#tabelRiwayat tbody");
@@ -54,18 +53,19 @@ btnSimpan.addEventListener("click", () => {
     return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
   }
 
-  // Simpan stok
-  set(ref(db, `stok/${nama}`), sisaBaru);
-
-  // Simpan riwayat
-  push(ref(db, "riwayat"), {
-    tanggal,
-    nama,
-    perubahan: jumlah,
-    sisa: sisaBaru
-  });
-
-  resetFormInputs();
+  // Simpan stok (overwrite jumlah terbaru)
+  set(ref(db, `stok/${nama}`), sisaBaru)
+    .then(() => {
+      // Simpan riwayat
+      push(ref(db, "riwayat"), {
+        tanggal,
+        nama,
+        perubahan: jumlah,
+        sisa: sisaBaru
+      });
+      resetFormInputs();
+    })
+    .catch(err => console.error("Gagal menyimpan stok:", err));
 });
 
 // =========================
@@ -93,11 +93,13 @@ function renderStok() {
     tabelStokBody.appendChild(tr);
   });
 
+  // Event hapus stok
   document.querySelectorAll("[data-hapus-barang]").forEach(btn => {
     btn.addEventListener("click", () => {
       const namaBarang = btn.getAttribute("data-hapus-barang");
       remove(ref(db, `stok/${namaBarang}`));
-      // Hapus semua riwayat barang ini
+
+      // Hapus riwayat barang tersebut
       onValue(ref(db, "riwayat"), snapshot => {
         snapshot.forEach(child => {
           if (child.val().nama === namaBarang) {
@@ -133,6 +135,7 @@ function renderRiwayat() {
     tabelRiwayatBody.appendChild(tr);
   });
 
+  // Event hapus riwayat
   document.querySelectorAll("#tabelRiwayat .smallBtn").forEach((btn, i) => {
     btn.addEventListener("click", () => {
       const entry = data[i];
@@ -165,11 +168,9 @@ searchBar.addEventListener("input", renderRiwayat);
 // ESCAPE HTML
 // =========================
 function escapeHtml(str) {
+  if (typeof str !== "string") return str;
   return str.replace(/[&<>"']/g, m => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;',
     '"': '&quot;', "'": '&#039;'
   })[m]);
 }
-
-
-
