@@ -1,78 +1,42 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitoring Stok Barang</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- SheetJS untuk Export Excel -->
-  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Overlay Login -->
-  <div id="loginOverlay" class="overlay hidden">
-    <div class="overlay-card">
-      <h2>Login Admin</h2>
-      <p class="muted">Masukkan kredensial untuk mengaktifkan Simpan/Edit/Hapus.</p>
-      <div class="form-row">
-        <label for="loginUser">Username</label>
-        <input type="text" id="loginUser" placeholder="Username" />
-      </div>
-      <div class="form-row">
-        <label for="loginPass">Password</label>
-        <input type="password" id="loginPass" placeholder="Password" />
-      </div>
-      <div class="actions">
-        <button id="btnLogin">Masuk</button>
-        <button id="btnBypass" class="smallBtn secondary">Lihat Saja</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notifikasi -->
-  <div id="toastContainer" style="position:fixed; bottom:20px; right:20px; z-index:9999;"></div>
-
-  <!-- Form Input Barang -->
   <div class="card">
-    <div class="flex-between">
-      <h1>Monitoring Stok Barang (Online)</h1>
-      <div class="pill" id="statusLogin">Mode: Read-Only</div>
-    </div>
+    <h1>Monitoring Stok Barang (Online)</h1>
 
     <div class="grid">
       <div>
-        <label for="inputNama">Nama Barang</label>
-        <input type="text" id="inputNama" placeholder="Nama barang" />
+        <label>Nama Barang</label>
+        <input type="text" id="inputNama" placeholder="Nama barang">
       </div>
       <div>
-        <label for="inputJumlah">Jumlah (+/-)</label>
-        <input type="number" id="inputJumlah" placeholder="Jumlah" />
+        <label>Jumlah (+/-)</label>
+        <input type="number" id="inputJumlah" placeholder="Jumlah">
       </div>
       <div>
-        <label for="inputTanggal">Tanggal</label>
-        <input type="date" id="inputTanggal" value="" />
+        <label>Tanggal</label>
+        <input type="date" id="inputTanggal">
       </div>
     </div>
 
     <div class="actions">
-      <button id="btnSimpan" disabled>Simpan</button>
+      <button id="btnSimpan">Simpan</button>
       <button id="btnResetForm" class="smallBtn secondary">Reset</button>
     </div>
   </div>
 
-  <!-- Tabel Stok -->
   <div class="card">
-    <div class="flex-between">
-      <h2>Daftar Stok</h2>
-      <div class="actions">
-        <button id="btnExportStok" class="smallBtn">Export Stok</button>
-      </div>
-    </div>
+    <h2>Daftar Stok</h2>
     <table id="tabelStok">
       <thead>
         <tr>
-          <th>No</th>
           <th>Nama Barang</th>
           <th>Jumlah</th>
           <th>Aksi</th>
@@ -82,15 +46,9 @@
     </table>
   </div>
 
-  <!-- Tabel Riwayat -->
   <div class="card">
-    <div class="flex-between">
-      <h2>Riwayat Perubahan</h2>
-      <div class="actions">
-        <button id="btnExportRiwayat" class="smallBtn">Export Riwayat</button>
-      </div>
-    </div>
-    <input type="text" id="searchBar" placeholder="Cari nama / tanggal (YYYY-MM-DD)" />
+    <h2>Riwayat Perubahan</h2>
+    <input type="text" id="searchBar" placeholder="Cari nama / tanggal">
     <table id="tabelRiwayat">
       <thead>
         <tr>
@@ -106,6 +64,7 @@
     </table>
   </div>
 
+  <!-- Firebase SDK -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
