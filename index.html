@@ -11,7 +11,7 @@
 <body>
 
   <!-- Overlay Login -->
-  <div id="loginOverlay" class="overlay">
+  <div id="loginOverlay" class="overlay hidden">
     <div class="overlay-card">
       <h2>Login Admin</h2>
       <p class="muted">Masukkan kredensial untuk mengaktifkan Simpan/Edit/Hapus.</p>
@@ -30,6 +30,10 @@
     </div>
   </div>
 
+  <!-- Toast Notifikasi -->
+  <div id="toastContainer" style="position:fixed; bottom:20px; right:20px; z-index:9999;"></div>
+
+  <!-- Form Input Barang -->
   <div class="card">
     <div class="flex-between">
       <h1>Monitoring Stok Barang (Online)</h1>
@@ -47,7 +51,7 @@
       </div>
       <div>
         <label for="inputTanggal">Tanggal</label>
-        <input type="date" id="inputTanggal" />
+        <input type="date" id="inputTanggal" value="" />
       </div>
     </div>
 
@@ -57,6 +61,7 @@
     </div>
   </div>
 
+  <!-- Tabel Stok -->
   <div class="card">
     <div class="flex-between">
       <h2>Daftar Stok</h2>
@@ -77,6 +82,7 @@
     </table>
   </div>
 
+  <!-- Tabel Riwayat -->
   <div class="card">
     <div class="flex-between">
       <h2>Riwayat Perubahan</h2>
