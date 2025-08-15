@@ -4,7 +4,7 @@ import { getDatabase, ref, set, push, remove, onValue }
   from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 /* =========================
-   KONFIGURASI FIREBASE
+   KONFIGURASI FIREBASE (TIDAK DIUBAH)
    ========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAXwrQEVJpDXSsWSF-QEcEtwzl08khw_YI",
@@ -22,7 +22,7 @@ try { getAnalytics(app); } catch (_) {}
 const db = getDatabase(app);
 
 /* =========================
-   AMBIL ELEMEN DOM
+   AMBIL ELEMEN DOM (ID harus cocok)
    ========================= */
 const inputNama = document.getElementById("inputNama");
 const inputJumlah = document.getElementById("inputJumlah");
@@ -40,29 +40,26 @@ const loginOverlay = document.getElementById("loginOverlay");
 const loginUser = document.getElementById("loginUser");
 const loginPass = document.getElementById("loginPass");
 const btnLogin = document.getElementById("btnLogin");
+const btnBypass = document.getElementById("btnBypass");
 const statusLogin = document.getElementById("statusLogin");
 
 /* =========================
-   LOGIN ADMIN TANPA CACHE
+   LOGIN ADMIN
    ========================= */
 const DEFAULT_USERNAME = "admin";
 const DEFAULT_PASSWORD = "password123";
-let isAdmin = false; // selalu false saat load
+
+let isAdmin = false;
 
 function updateGuard() {
   btnSimpan.disabled = !isAdmin;
-  btnResetForm.disabled = !isAdmin;
   statusLogin.textContent = isAdmin ? "Mode: Admin" : "Mode: Read-Only";
-
-  // Update tombol Edit/Hapus pada stok dan riwayat
-  document.querySelectorAll("[data-edit]").forEach(btn => btn.disabled = !isAdmin);
-  document.querySelectorAll("[data-hapus]").forEach(btn => btn.disabled = !isAdmin);
+  // tombol lain diatur saat render tabel
 }
 
 function showOverlay() {
   loginOverlay.classList.remove("hidden");
   loginOverlay.style.display = "grid";
-  loginUser.focus(); // fokus ke username
 }
 function hideOverlay() {
   loginOverlay.classList.add("hidden");
@@ -70,21 +67,35 @@ function hideOverlay() {
 }
 
 (function initLogin() {
-  // Overlay login selalu muncul saat load
-  showOverlay();
-  updateGuard();
+  const cached = localStorage.getItem("stok_is_admin") === "true";
+  if (cached) {
+    isAdmin = true;
+    hideOverlay();
+  } else {
+    showOverlay();
+  }
 
   btnLogin.addEventListener("click", () => {
     const u = (loginUser.value || "").trim();
     const p = (loginPass.value || "").trim();
     if (u === DEFAULT_USERNAME && p === DEFAULT_PASSWORD) {
       isAdmin = true;
+      localStorage.setItem("stok_is_admin", "true");
       updateGuard();
       hideOverlay();
     } else {
       alert("Username/Password salah.");
     }
   });
+
+  btnBypass.addEventListener("click", () => {
+    isAdmin = false;
+    localStorage.removeItem("stok_is_admin");
+    updateGuard();
+    hideOverlay();
+  });
+
+  updateGuard();
 })();
 
 /* =========================
@@ -104,7 +115,10 @@ function todayYMD() {
 }
 function escapeHtml(str) {
   if (typeof str !== "string") return str;
-  return str.replace(/[&<>"']/g, m => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"}[m]));
+  return str.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+    '"': '&quot;', "'": '&#039;'
+  })[m]);
 }
 function guardAction() {
   if (!isAdmin) { alert("Aksi ini memerlukan login admin."); return false; }
@@ -126,7 +140,9 @@ btnSimpan.addEventListener("click", () => {
   if (!tanggal) return alert("Tanggal wajib diisi.");
 
   const sisaBaru = (stokBarang[nama] || 0) + jumlah;
-  if (jumlah < 0 && sisaBaru < 0) return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
+  if (jumlah < 0 && sisaBaru < 0) {
+    return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
+  }
 
   set(ref(db, `stok/${nama}`), sisaBaru)
     .then(() => push(ref(db, "riwayat"), { tanggal, nama, perubahan: jumlah, sisa: sisaBaru }))
@@ -141,11 +157,12 @@ btnResetForm.addEventListener("click", () => {
 });
 
 /* =========================
-   RENDER STOK & RIWAYAT
+   RENDER STOK (No + Edit + Hapus)
    ========================= */
 function renderStok() {
   tabelStokBody.innerHTML = "";
   const names = Object.keys(stokBarang || {}).sort();
+
   if (!names.length) {
     tabelStokBody.innerHTML = `<tr><td colspan="4">Tidak ada stok</td></tr>`;
     return;
@@ -165,6 +182,7 @@ function renderStok() {
     tabelStokBody.appendChild(tr);
   });
 
+  // Edit
   document.querySelectorAll("[data-edit]").forEach(btn => {
     btn.onclick = () => {
       if (!guardAction()) return;
@@ -182,11 +200,13 @@ function renderStok() {
     };
   });
 
+  // Hapus
   document.querySelectorAll("[data-hapus]").forEach(btn => {
     btn.onclick = () => {
       if (!guardAction()) return;
       const nama = btn.getAttribute("data-hapus");
       if (!confirm(`Hapus barang "${nama}" beserta riwayatnya?`)) return;
+
       remove(ref(db, `stok/${nama}`)).catch(err => console.error("❌ Gagal hapus stok:", err));
       onValue(ref(db, "riwayat"), snapshot => {
         snapshot.forEach(child => {
@@ -197,12 +217,18 @@ function renderStok() {
   });
 }
 
+/* =========================
+   RENDER RIWAYAT
+   ========================= */
 function renderRiwayat() {
   let data = [...riwayat];
   const key = (searchBar.value || "").trim().toLowerCase();
-  if (key) data = data.filter(it =>
-    (it.nama || "").toLowerCase().includes(key) || (it.tanggal || "").toLowerCase().includes(key)
-  );
+  if (key) {
+    data = data.filter(it =>
+      (it.nama || "").toLowerCase().includes(key) ||
+      (it.tanggal || "").toLowerCase().includes(key)
+    );
+  }
 
   tabelRiwayatBody.innerHTML = "";
   if (!data.length) {
@@ -216,7 +242,7 @@ function renderRiwayat() {
       <td>${idx + 1}</td>
       <td>${escapeHtml(it.tanggal)}</td>
       <td>${escapeHtml(it.nama)}</td>
-      <td>${it.perubahan > 0 ? "+"+it.perubahan : it.perubahan}</td>
+      <td>${it.perubahan > 0 ? "+" + it.perubahan : it.perubahan}</td>
       <td>${it.sisa}</td>
       <td><button class="smallBtn danger" data-id="${it.id}" ${!isAdmin ? "disabled" : ""}>Hapus</button></td>
     `;
@@ -265,7 +291,9 @@ function today() {
 
 btnExportStok.addEventListener("click", () => {
   if (typeof XLSX === "undefined") return alert("Library XLSX belum dimuat.");
-  const rows = Object.keys(stokBarang || {}).sort().map((nama, idx) => ({ No: idx+1, "Nama Barang": nama, Jumlah: stokBarang[nama] }));
+  const rows = Object.keys(stokBarang || {}).sort().map((nama, idx) => ({
+    No: idx + 1, "Nama Barang": nama, Jumlah: stokBarang[nama]
+  }));
   if (!rows.length) return alert("Tidak ada data stok untuk diexport.");
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
@@ -276,7 +304,9 @@ btnExportStok.addEventListener("click", () => {
 btnExportRiwayat.addEventListener("click", () => {
   if (typeof XLSX === "undefined") return alert("Library XLSX belum dimuat.");
   if (!riwayat.length) return alert("Tidak ada data riwayat untuk diexport.");
-  const rows = riwayat.map((it, idx) => ({ No: idx+1, Tanggal: it.tanggal, "Nama Barang": it.nama, Perubahan: it.perubahan, Sisa: it.sisa }));
+  const rows = riwayat.map((it, idx) => ({
+    No: idx + 1, Tanggal: it.tanggal, "Nama Barang": it.nama, Perubahan: it.perubahan, Sisa: it.sisa
+  }));
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Riwayat");
