@@ -4,7 +4,7 @@ import { getDatabase, ref, set, push, remove, onValue }
   from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 /* =========================
-   KONFIGURASI FIREBASE (TIDAK DIUBAH)
+   KONFIGURASI FIREBASE
    ========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAXwrQEVJpDXSsWSF-QEcEtwzl08khw_YI",
@@ -40,7 +40,6 @@ const loginOverlay = document.getElementById("loginOverlay");
 const loginUser = document.getElementById("loginUser");
 const loginPass = document.getElementById("loginPass");
 const btnLogin = document.getElementById("btnLogin");
-const btnBypass = document.getElementById("btnBypass");
 const statusLogin = document.getElementById("statusLogin");
 
 /* =========================
@@ -48,16 +47,22 @@ const statusLogin = document.getElementById("statusLogin");
    ========================= */
 const DEFAULT_USERNAME = "admin";
 const DEFAULT_PASSWORD = "password123";
-let isAdmin = false;
+let isAdmin = false; // selalu false saat load
 
 function updateGuard() {
   btnSimpan.disabled = !isAdmin;
+  btnResetForm.disabled = !isAdmin;
   statusLogin.textContent = isAdmin ? "Mode: Admin" : "Mode: Read-Only";
+
+  // Update tombol Edit/Hapus pada stok dan riwayat
+  document.querySelectorAll("[data-edit]").forEach(btn => btn.disabled = !isAdmin);
+  document.querySelectorAll("[data-hapus]").forEach(btn => btn.disabled = !isAdmin);
 }
 
 function showOverlay() {
   loginOverlay.classList.remove("hidden");
   loginOverlay.style.display = "grid";
+  loginUser.focus(); // fokus ke username
 }
 function hideOverlay() {
   loginOverlay.classList.add("hidden");
@@ -65,8 +70,9 @@ function hideOverlay() {
 }
 
 (function initLogin() {
-  // selalu tampilkan overlay login saat load
+  // Overlay login selalu muncul saat load
   showOverlay();
+  updateGuard();
 
   btnLogin.addEventListener("click", () => {
     const u = (loginUser.value || "").trim();
@@ -79,14 +85,6 @@ function hideOverlay() {
       alert("Username/Password salah.");
     }
   });
-
-  btnBypass.addEventListener("click", () => {
-    isAdmin = false;
-    updateGuard();
-    hideOverlay();
-  });
-
-  updateGuard();
 })();
 
 /* =========================
@@ -143,7 +141,7 @@ btnResetForm.addEventListener("click", () => {
 });
 
 /* =========================
-   RENDER STOK
+   RENDER STOK & RIWAYAT
    ========================= */
 function renderStok() {
   tabelStokBody.innerHTML = "";
@@ -189,7 +187,6 @@ function renderStok() {
       if (!guardAction()) return;
       const nama = btn.getAttribute("data-hapus");
       if (!confirm(`Hapus barang "${nama}" beserta riwayatnya?`)) return;
-
       remove(ref(db, `stok/${nama}`)).catch(err => console.error("❌ Gagal hapus stok:", err));
       onValue(ref(db, "riwayat"), snapshot => {
         snapshot.forEach(child => {
@@ -200,9 +197,6 @@ function renderStok() {
   });
 }
 
-/* =========================
-   RENDER RIWAYAT
-   ========================= */
 function renderRiwayat() {
   let data = [...riwayat];
   const key = (searchBar.value || "").trim().toLowerCase();
