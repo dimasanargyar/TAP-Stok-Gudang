@@ -1,11 +1,49 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, push, remove, onValue }
-  from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-// =========================
-// KONFIGURASI FIREBASE
-// =========================
+/* =========================
+   LOGIN CONFIG
+   ========================= */
+let DEFAULT_USERNAME = "admin";
+let DEFAULT_PASSWORD = "123456";
+
+const loginScreen = document.getElementById("loginScreen");
+const mainApp = document.getElementById("mainApp");
+const loginUser = document.getElementById("loginUser");
+const loginPass = document.getElementById("loginPass");
+const btnLogin = document.getElementById("btnLogin");
+
+if (localStorage.getItem("isLoggedIn") === "true") {
+  showApp();
+}
+
+btnLogin.addEventListener("click", () => {
+  const user = loginUser.value.trim();
+  const pass = loginPass.value.trim();
+
+  if (user === DEFAULT_USERNAME && pass === DEFAULT_PASSWORD) {
+    localStorage.setItem("isLoggedIn", "true");
+    showApp();
+  } else {
+    alert("Username atau password salah!");
+  }
+});
+
+function showApp() {
+  loginScreen.style.display = "none";
+  mainApp.style.display = "block";
+}
+
+function logout() {
+  localStorage.removeItem("isLoggedIn");
+  location.reload();
+}
+window.logout = logout;
+
+/* =========================
+   KONFIGURASI FIREBASE
+   ========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAXwrQEVJpDXSsWSF-QEcEtwzl08khw_YI",
   authDomain: "stok-barang-d9ea6.firebaseapp.com",
@@ -18,12 +56,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+getAnalytics(app);
 const db = getDatabase(app);
 
-// =========================
-// ELEMENT DOM
-// =========================
+/* =========================
+   ELEMENT DOM
+   ========================= */
 const inputNama = document.getElementById("inputNama");
 const inputJumlah = document.getElementById("inputJumlah");
 const inputTanggal = document.getElementById("inputTanggal");
@@ -36,9 +74,9 @@ const tabelRiwayatBody = document.querySelector("#tabelRiwayat tbody");
 let stokBarang = {};
 let riwayat = [];
 
-// =========================
-// SIMPAN DATA
-// =========================
+/* =========================
+   SIMPAN DATA
+   ========================= */
 btnSimpan.addEventListener("click", () => {
   const nama = inputNama.value.trim();
   const jumlah = Number(inputJumlah.value);
@@ -53,27 +91,19 @@ btnSimpan.addEventListener("click", () => {
     return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
   }
 
-  console.log("📤 Mengirim data ke Firebase...");
   set(ref(db, `stok/${nama}`), sisaBaru)
     .then(() => {
-      console.log(`✅ Stok untuk "${nama}" tersimpan: ${sisaBaru}`);
-      return push(ref(db, "riwayat"), {
-        tanggal,
-        nama,
-        perubahan: jumlah,
-        sisa: sisaBaru
-      });
+      return push(ref(db, "riwayat"), { tanggal, nama, perubahan: jumlah, sisa: sisaBaru });
     })
     .then(() => {
-      console.log("✅ Riwayat tersimpan");
       resetFormInputs();
     })
     .catch(err => console.error("❌ Gagal menyimpan data:", err));
 });
 
-// =========================
-// RESET FORM
-// =========================
+/* =========================
+   RESET FORM
+   ========================= */
 btnResetForm.addEventListener("click", resetFormInputs);
 function resetFormInputs() {
   inputNama.value = "";
@@ -81,9 +111,9 @@ function resetFormInputs() {
   inputTanggal.value = "";
 }
 
-// =========================
-// RENDER STOK
-// =========================
+/* =========================
+   RENDER STOK
+   ========================= */
 function renderStok() {
   tabelStokBody.innerHTML = "";
   if (!stokBarang || Object.keys(stokBarang).length === 0) {
@@ -118,9 +148,9 @@ function renderStok() {
   });
 }
 
-// =========================
-// RENDER RIWAYAT
-// =========================
+/* =========================
+   RENDER RIWAYAT
+   ========================= */
 function renderRiwayat() {
   let data = [...riwayat];
   const key = searchBar.value.trim().toLowerCase();
@@ -157,12 +187,11 @@ function renderRiwayat() {
   });
 }
 
-// =========================
-// LISTENER REALTIME
-// =========================
+/* =========================
+   LISTENER REALTIME
+   ========================= */
 onValue(ref(db, "stok"), snapshot => {
   stokBarang = snapshot.val() || {};
-  console.log("📦 Data stok dari Firebase:", stokBarang);
   renderStok();
 });
 
@@ -173,15 +202,14 @@ onValue(ref(db, "riwayat"), snapshot => {
   });
   arr.sort((a,b) => (a.tanggal < b.tanggal ? 1 : -1));
   riwayat = arr;
-  console.log("📝 Data riwayat dari Firebase:", riwayat);
   renderRiwayat();
 });
 
 searchBar.addEventListener("input", renderRiwayat);
 
-// =========================
-// ESCAPE HTML
-// =========================
+/* =========================
+   ESCAPE HTML
+   ========================= */
 function escapeHtml(str) {
   if (typeof str !== "string") return str;
   return str.replace(/[&<>"']/g, m => ({
