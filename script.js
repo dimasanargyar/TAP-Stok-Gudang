@@ -4,7 +4,7 @@ import { getDatabase, ref, set, push, remove, onValue }
   from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 /* =======================================================
-   KONFIGURASI FIREBASE
+   KONFIGURASI FIREBASE (TIDAK DIUBAH)
 ======================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAXwrQEVJpDXSsWSF-QEcEtwzl08khw_YI",
@@ -34,6 +34,7 @@ let currentRole = null; // 'admin' | 'guest'
 /* =======================================================
    ELEMENT DOM
 ======================================================= */
+// Login
 const loginCard = document.getElementById("loginCard");
 const appRoot = document.getElementById("app");
 const loginUsername = document.getElementById("loginUsername");
@@ -41,6 +42,7 @@ const loginPassword = document.getElementById("loginPassword");
 const btnLogin = document.getElementById("btnLogin");
 const btnGuest = document.getElementById("btnGuest");
 
+// Form & tabel
 const inputNama = document.getElementById("inputNama");
 const inputJumlah = document.getElementById("inputJumlah");
 const inputTanggal = document.getElementById("inputTanggal");
@@ -50,6 +52,7 @@ const searchBar = document.getElementById("searchBar");
 const tabelStokBody = document.querySelector("#tabelStok tbody");
 const tabelRiwayatBody = document.querySelector("#tabelRiwayat tbody");
 
+// Export
 const btnExportStok = document.getElementById("btnExportStok");
 const btnExportRiwayat = document.getElementById("btnExportRiwayat");
 const bulanExport = document.getElementById("bulanExport");
@@ -88,12 +91,14 @@ function afterLogin() {
 function applyRoleUI() {
   const isGuest = currentRole === "guest";
 
+  // Form input & tombol
   inputNama.disabled = isGuest;
   inputJumlah.disabled = isGuest;
   inputTanggal.disabled = isGuest;
   btnSimpan.disabled = isGuest;
   btnResetForm.disabled = isGuest;
 
+  // Export
   btnExportStok.style.display = isGuest ? "none" : "inline-flex";
   btnExportRiwayat.style.display = isGuest ? "none" : "inline-flex";
   bulanExport.disabled = isGuest;
@@ -126,8 +131,13 @@ btnSimpan.addEventListener("click", () => {
   }
 
   set(ref(db, `stok/${nama}`), sisaBaru)
-    .then(() => push(ref(db, "riwayat"), { tanggal, nama, perubahan: jumlah, sisa: sisaBaru }))
-    .then(() => { alert("✅ Data berhasil disimpan."); resetFormInputs(); })
+    .then(() => push(ref(db, "riwayat"), {
+      tanggal, nama, perubahan: jumlah, sisa: sisaBaru
+    }))
+    .then(() => {
+      alert("✅ Data berhasil disimpan.");
+      resetFormInputs();
+    })
     .catch(err => console.error("❌ Gagal menyimpan data:", err));
 });
 
@@ -170,12 +180,17 @@ function renderStok() {
 
   document.querySelectorAll("[data-hapus-barang]").forEach(btn => {
     btn.addEventListener("click", () => {
-      if (currentRole === "guest") return alert("Mode Tamu: tidak diizinkan menghapus data.");
+      if (currentRole === "guest") {
+        alert("Mode Tamu: tidak diizinkan menghapus data.");
+        return;
+      }
       const namaBarang = btn.getAttribute("data-hapus-barang");
       if (confirm(`Yakin ingin menghapus barang "${namaBarang}"?`)) {
         remove(ref(db, `stok/${namaBarang}`));
         onValue(ref(db, "riwayat"), snapshot => {
-          snapshot.forEach(child => { if (child.val().nama === namaBarang) remove(ref(db, `riwayat/${child.key}`)); });
+          snapshot.forEach(child => {
+            if (child.val().nama === namaBarang) remove(ref(db, `riwayat/${child.key}`));
+          });
         }, { onlyOnce: true });
       }
     });
@@ -213,9 +228,12 @@ function renderRiwayat() {
 
   if (!currentRole || currentRole === "guest") return;
 
-  document.querySelectorAll("#tabelRiwayat .smallBtn").forEach((btn) => {
+  document.querySelectorAll("#tabelRiwayat .smallBtn").forEach(btn => {
     btn.addEventListener("click", () => {
-      if (currentRole === "guest") return alert("Mode Tamu: tidak diizinkan menghapus data.");
+      if (currentRole === "guest") {
+        alert("Mode Tamu: tidak diizinkan menghapus data.");
+        return;
+      }
       const id = btn.getAttribute("data-id");
       if (id && confirm(`Yakin ingin menghapus riwayat ini?`)) remove(ref(db, `riwayat/${id}`));
     });
@@ -233,7 +251,7 @@ onValue(ref(db, "stok"), snapshot => {
 onValue(ref(db, "riwayat"), snapshot => {
   const arr = [];
   snapshot.forEach(child => arr.push({ id: child.key, ...child.val() }));
-  arr.sort((a, b) => a.tanggal === b.tanggal ? (a.id < b.id ? 1 : -1) : (a.tanggal < b.tanggal ? 1 : -1));
+  arr.sort((a,b) => a.tanggal === b.tanggal ? (a.id < b.id ? 1 : -1) : (a.tanggal < b.tanggal ? 1 : -1));
   riwayat = arr;
   renderRiwayat();
 });
@@ -241,23 +259,45 @@ onValue(ref(db, "riwayat"), snapshot => {
 searchBar.addEventListener("input", renderRiwayat);
 
 /* =======================================================
-   EKSPOR KE XLS (RAPI)
+   EXPORT: STOK & RIWAYAT PER BULAN (.XLS)
 ======================================================= */
-function downloadXLS(tableData, filename) {
-  const tableHtml = `
-    <table border="1" style="border-collapse:collapse;">
-      ${tableData.map((row, i) => `
-        <tr>
-          ${row.map(cell => `
-            <td style="padding:4px; ${i===0?'font-weight:bold; background:#1976d2; color:#fff; text-align:center;':'text-align:center;'}">
-              ${cell}
-            </td>
-          `).join('')}
-        </tr>
-      `).join('')}
-    </table>
-  `;
-  const blob = new Blob([tableHtml], { type: "application/vnd.ms-excel" });
+btnExportStok.addEventListener("click", () => {
+  if (currentRole === "guest") return alert("Mode Tamu: tidak diizinkan mengekspor data.");
+
+  const rows = [["Nama Barang","Jumlah"]];
+  Object.keys(stokBarang).sort().forEach(nama => rows.push([nama, stokBarang[nama]]));
+
+  downloadXLS(rows, `stok_${todayCompact()}.xls`);
+});
+
+btnExportRiwayat.addEventListener("click", () => {
+  if (currentRole === "guest") return alert("Mode Tamu: tidak diizinkan mengekspor data.");
+
+  const bulan = (bulanExport.value || "").trim();
+  if (!bulan) return alert("Pilih bulan terlebih dahulu.");
+
+  const rows = [["Tanggal","Nama Barang","Perubahan","Sisa"]];
+  riwayat.filter(it => (it.tanggal||"").startsWith(bulan))
+         .forEach(it => rows.push([it.tanggal,it.nama,it.perubahan,it.sisa]));
+
+  downloadXLS(rows, `riwayat_${bulan}.xls`);
+});
+
+/* =======================================================
+   UTIL: DOWNLOAD XLS
+======================================================= */
+function downloadXLS(rows, filename) {
+  let html = `<table border="1" style="border-collapse:collapse;">`;
+  rows.forEach(r => {
+    html += "<tr>";
+    r.forEach(cell => {
+      html += `<td>${cell}</td>`;
+    });
+    html += "</tr>";
+  });
+  html += "</table>";
+
+  const blob = new Blob([html], { type: "application/vnd.ms-excel" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -268,33 +308,16 @@ function downloadXLS(tableData, filename) {
   URL.revokeObjectURL(url);
 }
 
-btnExportStok.addEventListener("click", () => {
-  if (currentRole === "guest") return alert("Mode Tamu: tidak diizinkan mengekspor data.");
-  const rows = [["Nama Barang", "Jumlah"]];
-  Object.keys(stokBarang).sort().forEach(nama => rows.push([nama, String(stokBarang[nama])]));
-  downloadXLS(rows, `stok_${todayCompact()}.xls`);
-});
-
-btnExportRiwayat.addEventListener("click", () => {
-  if (currentRole === "guest") return alert("Mode Tamu: tidak diizinkan mengekspor data.");
-  const bulan = (bulanExport.value || "").trim();
-  if (!bulan) return alert("Pilih bulan terlebih dahulu.");
-  const rows = [["Tanggal", "Nama Barang", "Perubahan", "Sisa"]];
-  riwayat.filter(it => (it.tanggal || "").startsWith(bulan))
-         .forEach(it => rows.push([it.tanggal, it.nama, String(it.perubahan), String(it.sisa)]));
-  downloadXLS(rows, `riwayat_${bulan}.xls`);
-});
-
 /* =======================================================
-   UTIL
+   UTIL: ESCAPE HTML & TANGGAL
 ======================================================= */
-function todayCompact() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-}
-
 function escapeHtml(str) {
   if (typeof str !== "string") return str;
   return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+function todayCompact() {
+  const d = new Date();
+  const pad = n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
 }
