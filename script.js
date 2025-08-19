@@ -1,10 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, push, remove, onValue }
+import { getDatabase, ref, set, push, remove, onValue, update }
   from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 /* =======================================================
-   KONFIGURASI FIREBASE  (TIDAK DIUBAH SESUAI PERMINTAAN)
+   FIREBASE CONFIG
 ======================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAXwrQEVJpDXSsWSF-QEcEtwzl08khw_YI",
@@ -22,19 +22,18 @@ const analytics = getAnalytics(app);
 const db = getDatabase(app);
 
 /* =======================================================
-   KONFIGURASI LOGIN (BISA DIUBAH)
+   LOGIN CONFIG
 ======================================================= */
 const CREDENTIALS = {
-  username: "admin",      // ← ubah ini
-  password: "admin123"    // ← ubah ini
+  username: "admin",
+  password: "admin123"
 };
 
 let currentRole = null; // 'admin' | 'guest'
 
 /* =======================================================
-   ELEMENT DOM
+   DOM ELEMENTS
 ======================================================= */
-// Login
 const loginCard = document.getElementById("loginCard");
 const appRoot = document.getElementById("app");
 const loginUsername = document.getElementById("loginUsername");
@@ -42,7 +41,6 @@ const loginPassword = document.getElementById("loginPassword");
 const btnLogin = document.getElementById("btnLogin");
 const btnGuest = document.getElementById("btnGuest");
 
-// Form & tabel
 const inputNama = document.getElementById("inputNama");
 const inputJumlah = document.getElementById("inputJumlah");
 const inputTanggal = document.getElementById("inputTanggal");
@@ -52,7 +50,6 @@ const searchBar = document.getElementById("searchBar");
 const tabelStokBody = document.querySelector("#tabelStok tbody");
 const tabelRiwayatBody = document.querySelector("#tabelRiwayat tbody");
 
-// Export
 const btnExportStok = document.getElementById("btnExportStok");
 const btnExportRiwayat = document.getElementById("btnExportRiwayat");
 const bulanExport = document.getElementById("bulanExport");
@@ -62,9 +59,10 @@ const bulanExport = document.getElementById("bulanExport");
 ======================================================= */
 let stokBarang = {};
 let riwayat = [];
+let editMode = null; // { namaLama, jumlahLama }
 
 /* =======================================================
-   LOGIN HANDLER
+   LOGIN
 ======================================================= */
 btnLogin.addEventListener("click", () => {
   const u = (loginUsername.value || "").trim();
@@ -90,7 +88,6 @@ function afterLogin() {
 
 function applyRoleUI() {
   const isGuest = currentRole === "guest";
-
   inputNama.disabled = isGuest;
   inputJumlah.disabled = isGuest;
   inputTanggal.disabled = isGuest;
@@ -106,7 +103,7 @@ function applyRoleUI() {
 }
 
 /* =======================================================
-   SIMPAN DATA
+   SIMPAN DATA & EDIT MODE
 ======================================================= */
 btnSimpan.addEventListener("click", () => {
   if (currentRole === "guest") {
@@ -123,6 +120,34 @@ btnSimpan.addEventListener("click", () => {
   if (Number.isNaN(jumlah)) return alert("Jumlah harus angka.");
   if (jumlah === 0) return alert("Jumlah tidak boleh 0.");
 
+  // === Jika sedang EDIT ===
+  if (editMode) {
+    const { namaLama } = editMode;
+
+    // update stok lama
+    remove(ref(db, `stok/${namaLama}`)).then(() => {
+      set(ref(db, `stok/${nama}`), jumlah).then(() => {
+        // update riwayat lama
+        onValue(ref(db, "riwayat"), snapshot => {
+          snapshot.forEach(child => {
+            if (child.val().nama === namaLama) {
+              update(ref(db, `riwayat/${child.key}`), {
+                nama,
+                sisa: jumlah
+              });
+            }
+          });
+        }, { onlyOnce: true });
+
+        alert("✅ Data berhasil diedit.");
+        resetFormInputs();
+        editMode = null;
+      });
+    });
+    return;
+  }
+
+  // === Tambah Baru ===
   const sisaBaru = (stokBarang[nama] || 0) + jumlah;
   if (jumlah < 0 && sisaBaru < 0) {
     return alert(`Stok tidak cukup. Stok saat ini: ${stokBarang[nama] || 0}`);
@@ -144,10 +169,11 @@ btnSimpan.addEventListener("click", () => {
     .catch(err => console.error("❌ Gagal menyimpan data:", err));
 });
 
-/* =======================================================
-   RESET FORM
-======================================================= */
-btnResetForm.addEventListener("click", resetFormInputs);
+btnResetForm.addEventListener("click", () => {
+  resetFormInputs();
+  editMode = null;
+});
+
 function resetFormInputs() {
   inputNama.value = "";
   inputJumlah.value = "";
@@ -155,7 +181,7 @@ function resetFormInputs() {
 }
 
 /* =======================================================
-   RENDER STOK + EDIT FITUR
+   RENDER STOK
 ======================================================= */
 function renderStok() {
   tabelStokBody.innerHTML = "";
@@ -184,7 +210,7 @@ function renderStok() {
 
   if (!currentRole || currentRole === "guest") return;
 
-  // Tombol Hapus
+  // Tombol hapus
   document.querySelectorAll("[data-hapus-barang]").forEach(btn => {
     btn.addEventListener("click", () => {
       const namaBarang = btn.getAttribute("data-hapus-barang");
@@ -201,46 +227,14 @@ function renderStok() {
     });
   });
 
-  // Tombol Edit
+  // Tombol edit
   document.querySelectorAll("[data-edit-barang]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const namaLama = btn.getAttribute("data-edit-barang");
-      const stokLama = stokBarang[namaLama];
-
-      const namaBaru = prompt("Edit Nama Barang:", namaLama);
-      if (!namaBaru) return;
-
-      const jumlahBaru = Number(prompt("Edit Jumlah Stok:", stokLama));
-      if (Number.isNaN(jumlahBaru) || jumlahBaru < 0) {
-        alert("Jumlah stok tidak valid.");
-        return;
-      }
-
-      // Update stok
-      set(ref(db, `stok/${namaBaru}`), jumlahBaru)
-        .then(() => {
-          if (namaBaru !== namaLama) {
-            remove(ref(db, `stok/${namaLama}`));
-          }
-
-          // Update riwayat
-          onValue(ref(db, "riwayat"), snapshot => {
-            snapshot.forEach(child => {
-              const val = child.val();
-              if (val.nama === namaLama) {
-                set(ref(db, `riwayat/${child.key}`), {
-                  ...val,
-                  nama: namaBaru,
-                  sisa: jumlahBaru,
-                  perubahan: jumlahBaru - stokLama
-                });
-              }
-            });
-          }, { onlyOnce: true });
-
-          alert("✅ Data berhasil diperbarui.");
-        })
-        .catch(err => console.error("❌ Gagal edit data:", err));
+      const namaBarang = btn.getAttribute("data-edit-barang");
+      inputNama.value = namaBarang;
+      inputJumlah.value = stokBarang[namaBarang];
+      inputTanggal.value = todayISO();
+      editMode = { namaLama: namaBarang };
     });
   });
 }
@@ -312,7 +306,7 @@ onValue(ref(db, "riwayat"), snapshot => {
 searchBar.addEventListener("input", renderRiwayat);
 
 /* =======================================================
-   EXPORT CSV
+   EXPORT XLS (PAKAI SheetJS)
 ======================================================= */
 btnExportStok.addEventListener("click", () => {
   if (currentRole === "guest") {
@@ -321,11 +315,13 @@ btnExportStok.addEventListener("click", () => {
   }
   const rows = [["Nama Barang", "Jumlah"]];
   Object.keys(stokBarang).sort().forEach(nama => {
-    rows.push([nama, String(stokBarang[nama])]);
+    rows.push([nama, stokBarang[nama]]);
   });
-  const csv = toCSV(rows);
-  const filename = `stok_${todayCompact()}.csv`;
-  downloadCSV(csv, filename);
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "Stok");
+  XLSX.writeFile(wb, `stok_${todayCompact()}.xls`);
 });
 
 btnExportRiwayat.addEventListener("click", () => {
@@ -341,48 +337,29 @@ btnExportRiwayat.addEventListener("click", () => {
   const rows = [["Tanggal", "Nama Barang", "Perubahan", "Sisa"]];
   riwayat
     .filter(it => (it.tanggal || "").startsWith(bulan))
-    .forEach(it => {
-      rows.push([it.tanggal, it.nama, String(it.perubahan), String(it.sisa)]);
-    });
+    .forEach(it => rows.push([it.tanggal, it.nama, it.perubahan, it.sisa]));
 
-  const csv = toCSV(rows);
-  const filename = `riwayat_${bulan}.csv`;
-  downloadCSV(csv, filename);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "Riwayat");
+  XLSX.writeFile(wb, `riwayat_${bulan}.xls`);
 });
 
-function toCSV(rows) {
-  return rows.map(r =>
-    r.map(x => {
-      const s = (x ?? "").toString();
-      if (/[",\n]/.test(s)) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    }).join(",")
-  ).join("\n");
-}
-
-function downloadCSV(csvString, filename) {
-  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
+/* =======================================================
+   UTIL
+======================================================= */
 function todayCompact() {
   const d = new Date();
   const pad = n => String(n).padStart(2, "0");
   return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
 }
 
-/* =======================================================
-   UTIL
-======================================================= */
+function todayISO() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
 function escapeHtml(str) {
   if (typeof str !== "string") return str;
   return str.replace(/[&<>"']/g, m => ({
