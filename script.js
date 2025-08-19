@@ -23,7 +23,6 @@ const db = getDatabase(app);
 
 /* =======================================================
    KONFIGURASI LOGIN (BISA DIUBAH)
-   - Ubah nilai di bawah sesuai kebutuhan Anda.
 ======================================================= */
 const CREDENTIALS = {
   username: "admin",      // ← ubah ini
@@ -84,7 +83,6 @@ btnGuest.addEventListener("click", () => {
 });
 
 function afterLogin() {
-  // Tampilkan app, sembunyikan login
   loginCard.style.display = "none";
   appRoot.style.display = "block";
   applyRoleUI();
@@ -93,19 +91,16 @@ function afterLogin() {
 function applyRoleUI() {
   const isGuest = currentRole === "guest";
 
-  // Form input & tombol
   inputNama.disabled = isGuest;
   inputJumlah.disabled = isGuest;
   inputTanggal.disabled = isGuest;
   btnSimpan.disabled = isGuest;
   btnResetForm.disabled = isGuest;
 
-  // Export
   btnExportStok.style.display = isGuest ? "none" : "inline-flex";
   btnExportRiwayat.style.display = isGuest ? "none" : "inline-flex";
   bulanExport.disabled = isGuest;
 
-  // Render ulang agar tombol Hapus tidak muncul untuk guest
   renderStok();
   renderRiwayat();
 }
@@ -136,7 +131,7 @@ btnSimpan.addEventListener("click", () => {
   set(ref(db, `stok/${nama}`), sisaBaru)
     .then(() => {
       return push(ref(db, "riwayat"), {
-        tanggal,  // format input date: YYYY-MM-DD
+        tanggal,
         nama,
         perubahan: jumlah,
         sisa: sisaBaru
@@ -160,7 +155,7 @@ function resetFormInputs() {
 }
 
 /* =======================================================
-   RENDER STOK
+   RENDER STOK + EDIT FITUR
 ======================================================= */
 function renderStok() {
   tabelStokBody.innerHTML = "";
@@ -178,7 +173,10 @@ function renderStok() {
       <td>${escapeHtml(nama)}</td>
       <td>${sisa}</td>
       <td>
-        ${isGuest ? "" : `<button class="smallBtn" data-hapus-barang="${escapeHtml(nama)}">Hapus</button>`}
+        ${isGuest ? "" : `
+          <button class="smallBtn" data-edit-barang="${escapeHtml(nama)}">Edit</button>
+          <button class="smallBtn" data-hapus-barang="${escapeHtml(nama)}">Hapus</button>
+        `}
       </td>
     `;
     tabelStokBody.appendChild(tr);
@@ -186,18 +184,12 @@ function renderStok() {
 
   if (!currentRole || currentRole === "guest") return;
 
+  // Tombol Hapus
   document.querySelectorAll("[data-hapus-barang]").forEach(btn => {
     btn.addEventListener("click", () => {
-      if (currentRole === "guest") {
-        alert("Mode Tamu: tidak diizinkan menghapus data.");
-        return;
-      }
       const namaBarang = btn.getAttribute("data-hapus-barang");
       if (confirm(`Yakin ingin menghapus barang "${namaBarang}"?`)) {
-        // Hapus stok
         remove(ref(db, `stok/${namaBarang}`));
-
-        // Hapus riwayat nama terkait (sekali ambil, tanpa pasang listener baru)
         onValue(ref(db, "riwayat"), snapshot => {
           snapshot.forEach(child => {
             if (child.val().nama === namaBarang) {
@@ -206,6 +198,49 @@ function renderStok() {
           });
         }, { onlyOnce: true });
       }
+    });
+  });
+
+  // Tombol Edit
+  document.querySelectorAll("[data-edit-barang]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const namaLama = btn.getAttribute("data-edit-barang");
+      const stokLama = stokBarang[namaLama];
+
+      const namaBaru = prompt("Edit Nama Barang:", namaLama);
+      if (!namaBaru) return;
+
+      const jumlahBaru = Number(prompt("Edit Jumlah Stok:", stokLama));
+      if (Number.isNaN(jumlahBaru) || jumlahBaru < 0) {
+        alert("Jumlah stok tidak valid.");
+        return;
+      }
+
+      // Update stok
+      set(ref(db, `stok/${namaBaru}`), jumlahBaru)
+        .then(() => {
+          if (namaBaru !== namaLama) {
+            remove(ref(db, `stok/${namaLama}`));
+          }
+
+          // Update riwayat
+          onValue(ref(db, "riwayat"), snapshot => {
+            snapshot.forEach(child => {
+              const val = child.val();
+              if (val.nama === namaLama) {
+                set(ref(db, `riwayat/${child.key}`), {
+                  ...val,
+                  nama: namaBaru,
+                  sisa: jumlahBaru,
+                  perubahan: jumlahBaru - stokLama
+                });
+              }
+            });
+          }, { onlyOnce: true });
+
+          alert("✅ Data berhasil diperbarui.");
+        })
+        .catch(err => console.error("❌ Gagal edit data:", err));
     });
   });
 }
@@ -243,13 +278,8 @@ function renderRiwayat() {
 
   if (!currentRole || currentRole === "guest") return;
 
-  // Tombol hapus riwayat
   document.querySelectorAll("#tabelRiwayat .smallBtn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (currentRole === "guest") {
-        alert("Mode Tamu: tidak diizinkan menghapus data.");
-        return;
-      }
       const id = btn.getAttribute("data-id");
       if (id && confirm(`Yakin ingin menghapus riwayat ini?`)) {
         remove(ref(db, `riwayat/${id}`));
@@ -271,7 +301,6 @@ onValue(ref(db, "riwayat"), snapshot => {
   snapshot.forEach(child => {
     arr.push({ id: child.key, ...child.val() });
   });
-  // Urutkan desc by tanggal, lalu by key (agar stabil saat tanggal sama)
   arr.sort((a, b) => {
     if (a.tanggal === b.tanggal) return a.id < b.id ? 1 : -1;
     return (a.tanggal < b.tanggal ? 1 : -1);
@@ -283,7 +312,7 @@ onValue(ref(db, "riwayat"), snapshot => {
 searchBar.addEventListener("input", renderRiwayat);
 
 /* =======================================================
-   EXPORT: STOK & RIWAYAT PER BULAN (CSV)
+   EXPORT CSV
 ======================================================= */
 btnExportStok.addEventListener("click", () => {
   if (currentRole === "guest") {
@@ -304,14 +333,14 @@ btnExportRiwayat.addEventListener("click", () => {
     alert("Mode Tamu: tidak diizinkan mengekspor data.");
     return;
   }
-  const bulan = (bulanExport.value || "").trim(); // format: YYYY-MM
+  const bulan = (bulanExport.value || "").trim();
   if (!bulan) {
     alert("Pilih bulan terlebih dahulu.");
     return;
   }
   const rows = [["Tanggal", "Nama Barang", "Perubahan", "Sisa"]];
   riwayat
-    .filter(it => (it.tanggal || "").startsWith(bulan)) // cocok YYYY-MM
+    .filter(it => (it.tanggal || "").startsWith(bulan))
     .forEach(it => {
       rows.push([it.tanggal, it.nama, String(it.perubahan), String(it.sisa)]);
     });
@@ -321,12 +350,10 @@ btnExportRiwayat.addEventListener("click", () => {
   downloadCSV(csv, filename);
 });
 
-// Util CSV
 function toCSV(rows) {
   return rows.map(r =>
     r.map(x => {
       const s = (x ?? "").toString();
-      // Escape tanda kutip dan koma, bungkus dengan tanda kutip
       if (/[",\n]/.test(s)) {
         return `"${s.replace(/"/g, '""')}"`;
       }
@@ -354,7 +381,7 @@ function todayCompact() {
 }
 
 /* =======================================================
-   UTIL: ESCAPE HTML
+   UTIL
 ======================================================= */
 function escapeHtml(str) {
   if (typeof str !== "string") return str;
