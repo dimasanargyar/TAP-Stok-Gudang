@@ -1,3 +1,6 @@
+@charset "UTF-8";
+
+/* Variabel tema */
 :root {
   --bg: #f4f6f8;
   --card: #fff;
@@ -5,27 +8,19 @@
   --muted: #666;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* Reset ringkas */
+* { box-sizing: border-box; }
 
 body {
-  font-family: Inter, system-ui, Segoe UI, Arial;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   margin: 0;
   background: var(--bg);
   color: #111;
   padding: 18px;
 }
 
-h1 {
-  margin: 0 0 4px 0;
-  font-size: 20px;
-}
-
-h2 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-}
+h1 { margin: 0 0 4px 0; font-size: 20px; }
+h2 { margin: 0 0 8px 0; font-size: 16px; }
 
 .card {
   background: var(--card);
@@ -35,7 +30,12 @@ h2 {
   margin-bottom: 14px;
 }
 
-input[type="text"], input[type="number"], input[type="date"] {
+/* Input umum: tambahkan type=month agar konsisten dengan date */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="month"],
+input[type="password"] {
   width: 100%;
   padding: 8px 10px;
   margin-top: 6px;
@@ -43,6 +43,8 @@ input[type="text"], input[type="number"], input[type="date"] {
   border: 1px solid #d0d7de;
   border-radius: 6px;
   font-size: 14px;
+  background: #fff;
+  color: #111;
 }
 
 button {
@@ -50,21 +52,14 @@ button {
   border-radius: 8px;
   border: none;
   background: var(--accent);
-  color: white;
+  color: #fff;
   cursor: pointer;
   font-weight: 600;
 }
 
-button[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+button[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
+.actions { display: flex; gap: 8px; margin-top: 8px; }
 
 .grid {
   display: grid;
@@ -87,25 +82,21 @@ th, td {
 
 th {
   background: var(--accent);
-  color: white;
+  color: #fff;
 }
 
 .smallBtn {
   padding: 6px 8px;
   border-radius: 6px;
   background: #ef4444;
-  color: white;
+  color: #fff;
   border: none;
   cursor: pointer;
   font-weight: 600;
 }
 
-.smallBtn.secondary {
-  background: #6b7280;
-}
+.smallBtn.secondary { background: #6b7280; }
 
 @media (max-width: 760px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+  .grid { grid-template-columns: 1fr; }
 }
