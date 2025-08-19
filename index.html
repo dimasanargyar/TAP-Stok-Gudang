@@ -69,7 +69,7 @@
         <tbody></tbody>
       </table>
       <div class="actions">
-        <button id="btnExportStok" class="smallBtn">Export Stok (.csv)</button>
+        <button id="btnExportStok" class="smallBtn">Export Stok (.xls)</button>
       </div>
     </div>
 
@@ -84,7 +84,7 @@
         </div>
         <div>
           <label>&nbsp;</label>
-          <button id="btnExportRiwayat" class="smallBtn">Export Riwayat Bulanan (.csv)</button>
+          <button id="btnExportRiwayat" class="smallBtn">Export Riwayat Bulanan (.xls)</button>
         </div>
       </div>
 
@@ -103,6 +103,28 @@
       </table>
     </div>
   </div>
+
+  <!-- Modal Edit -->
+  <div id="editModal" class="modal" style="display:none;">
+    <div class="modal-content card">
+      <h2>Edit Barang</h2>
+      <div>
+        <label>Nama Barang</label>
+        <input type="text" id="editNama">
+      </div>
+      <div>
+        <label>Jumlah</label>
+        <input type="number" id="editJumlah">
+      </div>
+      <div class="actions">
+        <button id="btnUpdateBarang">Update</button>
+        <button id="btnCancelEdit" class="smallBtn secondary">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SheetJS untuk Export XLS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Firebase & App -->
   <script type="module" src="script.js"></script>
