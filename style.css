@@ -115,3 +115,16 @@ th {
   max-width: 400px;
   width: 100%;
 }
+
+/* Tambahan agar tabel ramah di HP */
+.card table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth scroll di iOS */
+}
+
+.card table th,
+.card table td {
+  white-space: nowrap; /* cegah teks patah ke bawah */
+}
