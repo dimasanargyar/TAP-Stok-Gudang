@@ -9,14 +9,18 @@
 }
 
 /* Reset ringkas */
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  margin: 0;
   background: var(--bg);
   color: #111;
   padding: 18px;
+  overflow-x: hidden; /* cegah space kosong di kanan */
 }
 
 h1 { margin: 0 0 4px 0; font-size: 20px; }
@@ -28,6 +32,8 @@ h2 { margin: 0 0 8px 0; font-size: 16px; }
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   margin-bottom: 14px;
+  width: 100%;
+  max-width: 100%; /* agar card tidak melebar */
 }
 
 /* Input umum */
@@ -50,6 +56,7 @@ input[type="password"] {
 /* Batasi search bar agar tidak melebar ke kanan */
 #search-bar {
   max-width: 360px;
+  width: 100%;
   display: block;
 }
 
@@ -65,19 +72,21 @@ button {
 
 button[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-.actions { display: flex; gap: 8px; margin-top: 8px; }
+.actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  width: 100%;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
-  table-layout: auto; /* agar kolom adaptif */
+  table-layout: auto;
+  max-width: 100%; /* cegah overflow */
 }
 
 th, td {
@@ -128,10 +137,10 @@ th {
   display: block;
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* smooth scroll di iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 .card table th,
 .card table td {
-  white-space: nowrap; /* cegah teks patah ke bawah */
+  white-space: nowrap;
 }
