@@ -114,9 +114,10 @@ function applyRoleUI() {
   btnSimpan.disabled = isGuest;
   btnResetForm.disabled = isGuest;
 
-  btnExportStok.style.display = isGuest ? "none" : "inline-flex";
-  btnExportRiwayat.style.display = isGuest ? "none" : "inline-flex";
-  bulanExport.disabled = isGuest;
+  // ✅ Export tetap tersedia untuk tamu
+  btnExportStok.style.display = "inline-flex";
+  btnExportRiwayat.style.display = "inline-flex";
+  bulanExport.disabled = false;
 
   renderStok();
   renderRiwayat();
@@ -361,10 +362,6 @@ btnCancelEdit.addEventListener("click", () => {
    EXPORT XLS
 ======================================================= */
 btnExportStok.addEventListener("click", () => {
-  if (currentRole === "guest") {
-    alert("Mode Tamu: tidak diizinkan mengekspor data.");
-    return;
-  }
   const rows = [["Nama Barang", "Jumlah", "Satuan"]];
   Object.keys(stokBarang).sort().forEach(nama => {
     const item = stokBarang[nama];
@@ -378,10 +375,6 @@ btnExportStok.addEventListener("click", () => {
 });
 
 btnExportRiwayat.addEventListener("click", () => {
-  if (currentRole === "guest") {
-    alert("Mode Tamu: tidak diizinkan mengekspor data.");
-    return;
-  }
   const bulan = (bulanExport.value || "").trim();
   if (!bulan) {
     alert("Pilih bulan terlebih dahulu.");
@@ -420,4 +413,3 @@ function escapeHtml(str) {
     '"': '&quot;', "'": '&#039;'
   })[m]);
 }
-
