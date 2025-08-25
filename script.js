@@ -95,7 +95,7 @@ if (togglePassword) {
   togglePassword.addEventListener("click", () => {
     const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
     loginPassword.setAttribute("type", type);
-    togglePassword.textContent = type === "password" ? "🟢" : "🔴";
+    togglePassword.textContent = type === "password" ? "🔴" : "🟢";
   });
 }
 
@@ -420,3 +420,4 @@ function escapeHtml(str) {
     '"': '&quot;', "'": '&#039;'
   })[m]);
 }
+
