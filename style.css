@@ -15,17 +15,24 @@
   padding: 0;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden; /* cegah space kosong horizontal */
+}
+
 body {
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   background: var(--bg);
   color: #111;
   padding: 18px;
-  overflow-x: hidden; /* cegah space kosong di kanan */
 }
 
+/* Judul */
 h1 { margin: 0 0 4px 0; font-size: 20px; }
 h2 { margin: 0 0 8px 0; font-size: 16px; }
 
+/* Card */
 .card {
   background: var(--card);
   padding: 14px;
@@ -33,10 +40,11 @@ h2 { margin: 0 0 8px 0; font-size: 16px; }
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   margin-bottom: 14px;
   width: 100%;
-  max-width: 100%; /* agar card tidak melebar */
+  max-width: 100%; /* batasi agar tidak overflow */
+  overflow-x: auto; /* jika konten kepanjangan */
 }
 
-/* Input umum */
+/* Input */
 input[type="text"],
 input[type="number"],
 input[type="date"],
@@ -53,7 +61,7 @@ input[type="password"] {
   color: #111;
 }
 
-/* Batasi search bar agar tidak melebar ke kanan */
+/* Batasi search bar */
 #search-bar {
   max-width: 360px;
   width: 100%;
@@ -72,21 +80,27 @@ button {
 
 button[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-.actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.actions { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 8px; 
+  flex-wrap: wrap; 
+}
 
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   width: 100%;
+  max-width: 100%;
 }
 
+/* Tabel */
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
   table-layout: auto;
-  max-width: 100%; /* cegah overflow */
 }
 
 th, td {
@@ -113,6 +127,7 @@ th {
 
 .smallBtn.secondary { background: #6b7280; }
 
+/* Responsive */
 @media (max-width: 760px) {
   .grid { grid-template-columns: 1fr; }
 }
@@ -132,7 +147,7 @@ th {
   width: 100%;
 }
 
-/* Tambahan agar tabel ramah di HP */
+/* Tambahan agar tabel ramah HP */
 .card table {
   display: block;
   width: 100%;
