@@ -1,138 +1,108 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitoring Stok Barang</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- CARD LOGIN -->
+  <!-- ===== LOGIN CARD ===== -->
   <div class="card" id="loginCard">
     <h1>Masuk</h1>
-    <div class="grid">
-      <div>
-        <label>Username</label>
-        <input type="text" id="loginUsername" placeholder="Username" />
-      </div>
-      <div>
-        <label>Password</label>
-        <div style="position:relative;">
-          <input type="password" id="loginPassword" placeholder="Password" />
-          <button type="button" id="togglePassword" 
-            style="position:absolute; right:8px; top:50%; transform:translateY(-50%);
-                   background:none; border:none; cursor:pointer; font-size:12px; color:#1976d2;">
-            🔴
-          </button>
-        </div>
-      </div>
-      <div>
-        <label>&nbsp;</label>
-        <button id="btnLogin">Login</button>
-      </div>
+    <div>
+      <label>Email</label>
+      <input type="text" id="loginUsername" placeholder="admin@contoh.com">
+    </div>
+    <div>
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Password">
     </div>
     <div class="actions">
-      <button id="btnGuest" class="smallBtn secondary">Masuk sebagai Tamu</button>
+      <button id="btnLogin">Login</button>
+      <button id="btnGuest">Masuk sebagai Tamu</button>
     </div>
   </div>
 
-  <!-- APP CONTENT (TERSEMBUNYI SEBELUM LOGIN) -->
-  <div id="app" style="display:none;">
-    <div class="card">
-      <h1>Monitoring Stok Barang</h1>
+  <!-- ===== APP CONTENT ===== -->
+  <div id="appRoot" style="display:none;">
+    <button id="btnLogout" class="smallBtn secondary">Logout</button>
 
-      <div class="grid">
-        <div>
-          <label>Nama Barang</label>
-          <input type="text" id="inputNama" placeholder="Nama barang" />
-        </div>
-        <div>
-          <label>Jumlah (+/-)</label>
-          <input type="number" id="inputJumlah" placeholder="Jumlah" />
-        </div>
-        <div>
-          <label>Satuan</label>
-          <input type="text" id="inputSatuan" placeholder="Contoh: pcs, box, kg" />
-        </div>
-        <div>
-          <label>Tanggal</label>
-          <input type="date" id="inputTanggal" />
-        </div>
+    <!-- ===== FORM STOK ===== -->
+    <div class="card adminOnly">
+      <h2>Tambah Stok Barang</h2>
+      <div>
+        <label>Nama</label>
+        <input type="text" id="inputNama">
       </div>
-
+      <div>
+        <label>Jumlah</label>
+        <input type="number" id="inputJumlah">
+      </div>
+      <div>
+        <label>Harga</label>
+        <input type="number" id="inputHarga">
+      </div>
       <div class="actions">
         <button id="btnSimpan">Simpan</button>
-        <button id="btnResetForm" class="smallBtn secondary">Reset</button>
+        <button id="btnResetForm">Reset</button>
       </div>
     </div>
 
+    <!-- ===== TABEL STOK ===== -->
     <div class="card">
       <h2>Daftar Stok</h2>
-      <input type="text" id="searchStok" placeholder="Cari nama barang" />
-      <table id="tabelStok">
+      <table id="stokTable">
         <thead>
           <tr>
-            <th>Nama Barang</th>
+            <th>Nama</th>
             <th>Jumlah</th>
-            <th>Satuan</th>
+            <th>Harga</th>
+            <th>Tanggal</th>
             <th>Aksi</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="stokTableBody"></tbody>
       </table>
       <div class="actions">
-        <button id="btnExportStok" class="smallBtn">Export Stok</button>
+        <button id="btnExportStok">Export Stok</button>
       </div>
     </div>
 
+    <!-- ===== TABEL RIWAYAT ===== -->
     <div class="card">
       <h2>Riwayat Perubahan</h2>
-      <input type="text" id="searchBar" placeholder="Cari nama / tanggal" />
-
-      <div class="grid" style="margin-top:8px;">
-        <div>
-          <label>Filter Bulan (Riwayat)</label>
-          <input type="month" id="bulanExport" />
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <button id="btnExportRiwayat" class="smallBtn">Export Riwayat Bulanan</button>
-        </div>
-      </div>
-
-      <table id="tabelRiwayat">
+      <table id="riwayatTable">
         <thead>
           <tr>
-            <th>No</th>
-            <th>Tanggal</th>
-            <th>Nama Barang</th>
-            <th>Perubahan</th>
-            <th>Sisa</th>
-            <th>Satuan</th>
             <th>Aksi</th>
+            <th>Detail</th>
+            <th>Waktu</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="riwayatTableBody"></tbody>
       </table>
+      <div class="actions">
+        <button id="btnExportRiwayat">Export Riwayat</button>
+      </div>
     </div>
   </div>
 
-  <!-- Modal Edit -->
+  <!-- ===== MODAL EDIT ===== -->
   <div id="editModal" class="modal" style="display:none;">
     <div class="modal-content card">
       <h2>Edit Barang</h2>
       <div>
-        <label>Nama Barang</label>
-        <input type="text" id="editNama" />
+        <label>Nama</label>
+        <input type="text" id="editNama">
       </div>
       <div>
         <label>Jumlah</label>
-        <input type="number" id="editJumlah" />
+        <input type="number" id="editJumlah">
       </div>
       <div>
-        <label>Satuan</label>
-        <input type="text" id="editSatuan" />
+        <label>Harga</label>
+        <input type="number" id="editSatuan">
       </div>
       <div class="actions">
         <button id="btnUpdateBarang">Update</button>
@@ -141,11 +111,7 @@
     </div>
   </div>
 
-  <!-- SheetJS untuk Export XLS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Firebase & App -->
+  <!-- Firebase + Script -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
-
