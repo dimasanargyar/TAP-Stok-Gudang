@@ -40,7 +40,6 @@ const loginUsername = document.getElementById("loginUsername");
 const loginPassword = document.getElementById("loginPassword");
 const btnLogin = document.getElementById("btnLogin");
 const btnGuest = document.getElementById("btnGuest");
-const togglePassword = document.getElementById("togglePassword");
 
 const inputNama = document.getElementById("inputNama");
 const inputJumlah = document.getElementById("inputJumlah");
@@ -89,15 +88,6 @@ btnGuest.addEventListener("click", () => {
   currentRole = "guest";
   afterLogin();
 });
-
-/* 👁 Toggle password */
-if (togglePassword) {
-  togglePassword.addEventListener("click", () => {
-    const type = loginPassword.getAttribute("type") === "password" ? "text" : "password";
-    loginPassword.setAttribute("type", type);
-    togglePassword.textContent = type === "password" ? "🟢" : "🔴";
-  });
-}
 
 function afterLogin() {
   loginCard.style.display = "none";
